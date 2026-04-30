@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI is Learning YOU</title>
+  <style>
+    :root {
+      --bg: #03040a;
+      --panel: rgba(13, 20, 35, 0.56);
+      --text: #eaf6ff;
+      --muted: #8aa8b8;
+      --cyan: #49f7ff;
+      --violet: #ad6cff;
+      --red: #ff315b;
+      --green: #46ff9a;
+      --accent: var(--cyan);
+      --danger: rgba(255, 49, 91, 0.82);
+      color-scheme: dark;
+      font-family: "Orbitron", "Space Grotesk", "Rajdhani", "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      color: var(--text);
+    }
+
+    body {
+      cursor: none;
+      letter-spacing: 0;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 100%;
+      isolation: isolate;
+      background:
+        radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(73, 247, 255, 0.16), transparent 18rem),
+        linear-gradient(120deg, #03040a 0%, #080517 42%, #020815 100%);
+      transition: background 900ms ease, filter 600ms ease;
+    }
+
+    .stage.fast {
+      --accent: var(--red);
+      background:
+        radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 49, 91, 0.24), transparent 17rem),
+        linear-gradient(130deg, #090106 0%, #18040b 46%, #05050a 100%);
+      animation: intensityShake 150ms infinite steps(2, end);
+    }
+
+    .stage.slow {
+      --accent: var(--cyan);
+      background:
+        radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(73, 247, 255, 0.2), transparent 20rem),
+        linear-gradient(130deg, #020814 0%, #061a25 52%, #02030a 100%);
+    }
+
+    .stage.blackout {
+      filter: brightness(0);
+    }
+
+    .noise,
+    .scan,
+    .grid,
+    .glitch-wash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .noise {
+      z-index: 9;
+      opacity: 0.2;
+      background-image:
+        repeating-radial-gradient(circle at 15% 20%, rgba(255,255,255,0.08) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(90deg, transparent 0 3px, rgba(255,255,255,0.035) 3px 4px);
+      mix-blend-mode: screen;
+      animation: noiseShift 650ms steps(4, end) infinite;
+    }
+
+    .scan {
+      z-index: 8;
+      background: repeating-linear-gradient(180deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 5px);
+      opacity: 0.18;
+    }
+
+    .grid {
+      z-index: -1;
+      opacity: 0.36;
+      background-image:
+        linear-gradient(rgba(73, 247, 255, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(173, 108, 255, 0.09) 1px, transparent 1px);
+      background-size: 5rem 5rem;
+      mask-image: radial-gradient(circle at center, black 0, transparent 72%);
+      animation: gridDrift 9s linear infinite;
+    }
+
+    .glitch-wash {
+      z-index: 11;
+      opacity: 0;
+      background: linear-gradient(90deg, transparent 0 12%, rgba(73, 247, 255, 0.9) 13% 15%, transparent 16% 44%, rgba(255, 49, 91, 0.82) 45% 48%, transparent 49%);
+      mix-blend-mode: screen;
+    }
+
+    .glitch-wash.on {
+      animation: wash 820ms steps(2, end);
+    }
+
+    .cursor {
+      position: fixed;
+      z-index: 30;
+      left: 0;
+      top: 0;
+      width: 1.35rem;
+      height: 1.35rem;
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      box-shadow: 0 0 1rem var(--accent), 0 0 2.7rem color-mix(in srgb, var(--accent), transparent 25%);
+      transition: width 200ms ease, height 200ms ease, border-color 300ms ease;
+    }
+
+    .cursor::after {
+      content: "";
+      position: absolute;
+      inset: -1.1rem;
+      border-radius: inherit;
+      background: radial-gradient(circle, color-mix(in srgb, var(--accent), transparent 60%), transparent 62%);
+      filter: blur(0.4rem);
+    }
+
+    .cursor.clicking {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .hud {
+      position: fixed;
+      inset: 1.1rem 1.25rem auto;
+      z-index: 12;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: start;
+      color: var(--muted);
+      font-size: clamp(0.72rem, 1.8vw, 0.92rem);
+      text-transform: uppercase;
+    }
+
+    .brand {
+      display: flex;
+      gap: 0.7rem;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .dot {
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 1rem var(--accent);
+      animation: pulse 1.3s ease-in-out infinite;
+      flex: 0 0 auto;
+    }
+
+    .telemetry {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: end;
+    }
+
+    .chip {
+      min-width: 7.4rem;
+      padding: 0.6rem 0.7rem;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.045);
+      backdrop-filter: blur(1rem);
+      border-radius: 0.45rem;
+      box-shadow: inset 0 0 1.8rem rgba(255,255,255,0.025);
+    }
+
+    .chip strong {
+      display: block;
+      color: var(--text);
+      font-size: 0.95rem;
+      margin-top: 0.25rem;
+    }
+
+    .center {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 6.5rem 1.25rem 3rem;
+      text-align: center;
+    }
+
+    .screen {
+      position: relative;
+      width: min(62rem, 100%);
+      min-height: min(32rem, calc(100vh - 9.5rem));
+      display: grid;
+      place-items: center;
+      padding: clamp(1.1rem, 4vw, 3rem);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 0.5rem;
+      background: var(--panel);
+      box-shadow:
+        0 0 3rem rgba(73, 247, 255, 0.12),
+        inset 0 0 5rem rgba(0,0,0,0.55);
+      backdrop-filter: blur(1.1rem);
+      overflow: hidden;
+    }
+
+    .screen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 1px solid color-mix(in srgb, var(--accent), transparent 45%);
+      opacity: 0.5;
+      transform: translate(0.75rem, -0.75rem);
+      pointer-events: none;
+    }
+
+    .copy {
+      position: relative;
+      z-index: 2;
+      width: min(51rem, 100%);
+    }
+
+    .eyebrow {
+      margin: 0 0 1.2rem;
+      color: var(--accent);
+      font-size: clamp(0.72rem, 1.7vw, 0.92rem);
+      text-transform: uppercase;
+      text-shadow: 0 0 1rem var(--accent);
+    }
+
+    h1 {
+      min-height: 8.4rem;
+      margin: 0;
+      font-size: clamp(2.5rem, 8vw, 6.6rem);
+      line-height: 0.98;
+      font-weight: 800;
+      text-transform: uppercase;
+      text-shadow:
+        0 0 0.8rem color-mix(in srgb, var(--accent), transparent 35%),
+        0.08em 0 rgba(255,49,91,0.18),
+        -0.06em 0 rgba(73,247,255,0.18);
+    }
+
+    .subline {
+      min-height: 2.4rem;
+      margin: 1.4rem auto 0;
+      color: #b8d4df;
+      font-size: clamp(1rem, 2.5vw, 1.35rem);
+      line-height: 1.45;
+      max-width: 44rem;
+    }
+
+    .boot-lines {
+      display: grid;
+      gap: 0.8rem;
+      text-align: left;
+      color: var(--green);
+      font: 600 clamp(1rem, 3vw, 1.55rem) "Cascadia Code", "Consolas", monospace;
+      text-shadow: 0 0 0.9rem rgba(70, 255, 154, 0.55);
+    }
+
+    .boot-lines span::before {
+      content: "> ";
+      opacity: 0.6;
+    }
+
+    .choices {
+      display: none;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin-top: 2rem;
+    }
+
+    .choice {
+      min-height: 4.9rem;
+      padding: 1rem;
+      color: var(--text);
+      border: 1px solid color-mix(in srgb, var(--accent), transparent 35%);
+      border-radius: 0.5rem;
+      background: rgba(255,255,255,0.06);
+      box-shadow: 0 0 1.2rem rgba(73,247,255,0.09), inset 0 0 1.8rem rgba(255,255,255,0.03);
+      cursor: none;
+      transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+    }
+
+    .choice:hover,
+    .choice:focus-visible {
+      transform: translateY(-0.25rem);
+      background: color-mix(in srgb, var(--accent), transparent 88%);
+      box-shadow: 0 0 2.4rem color-mix(in srgb, var(--accent), transparent 58%);
+      outline: none;
+    }
+
+    .choices.visible {
+      display: grid;
+    }
+
+    .prediction {
+      min-height: 1.7rem;
+      margin-top: 1rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      text-shadow: 0 0 1rem var(--accent);
+    }
+
+    .start {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: grid;
+      place-items: center;
+      padding: 1.25rem;
+      background: #000;
+      transition: opacity 500ms ease, visibility 500ms ease;
+    }
+
+    .start.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .start button {
+      width: min(24rem, 100%);
+      min-height: 4rem;
+      color: #eaf6ff;
+      background: rgba(73, 247, 255, 0.08);
+      border: 1px solid rgba(73, 247, 255, 0.58);
+      border-radius: 0.5rem;
+      box-shadow: 0 0 2.5rem rgba(73,247,255,0.22);
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .flash {
+      animation: whiteFlash 560ms ease-out;
+    }
+
+    .text-glitch {
+      animation: textGlitch 360ms steps(2, end) 4;
+    }
+
+    @keyframes pulse {
+      50% { transform: scale(1.6); opacity: 0.55; }
+    }
+
+    @keyframes gridDrift {
+      to { background-position: 5rem 5rem; }
+    }
+
+    @keyframes noiseShift {
+      50% { transform: translate(1.5rem, -1rem); }
+      100% { transform: translate(-1rem, 0.75rem); }
+    }
+
+    @keyframes intensityShake {
+      50% { transform: translate(0.08rem, -0.05rem); }
+    }
+
+    @keyframes whiteFlash {
+      0% { box-shadow: inset 0 0 0 100vmax rgba(255,255,255,0.92); }
+      100% { box-shadow: inset 0 0 0 100vmax rgba(255,255,255,0); }
+    }
+
+    @keyframes wash {
+      0%, 100% { opacity: 0; transform: translateX(-35%); }
+      14%, 42%, 66% { opacity: 0.9; }
+      28%, 55%, 80% { opacity: 0.15; transform: translateX(24%); }
+    }
+
+    @keyframes textGlitch {
+      0% { transform: translate(0); filter: hue-rotate(0deg); }
+      35% { transform: translate(0.18rem, -0.07rem); filter: hue-rotate(130deg); }
+      70% { transform: translate(-0.14rem, 0.08rem); filter: hue-rotate(-120deg); }
+      100% { transform: translate(0); filter: hue-rotate(0deg); }
+    }
+
+    @media (max-width: 720px) {
+      .hud {
+        grid-template-columns: 1fr;
+      }
+
+      .telemetry {
+        justify-content: start;
+      }
+
+      .chip {
+        min-width: 6.2rem;
+        flex: 1 1 6.2rem;
+      }
+
+      .screen {
+        min-height: calc(100vh - 12rem);
+      }
+
+      h1 {
+        min-height: 6.5rem;
+      }
+
+      .choices {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="grid"></div>
+    <div class="scan"></div>
+    <div class="noise"></div>
+    <div class="glitch-wash" id="wash"></div>
+    <div class="cursor" id="cursor"></div>
+
+    <header class="hud" aria-live="polite">
+      <div class="brand"><span class="dot"></span><span>WEBOREEL / AI IS LEARNING YOU</span></div>
+      <div class="telemetry">
+        <div class="chip">Motion<strong id="speed">0%</strong></div>
+        <div class="chip">Clicks<strong id="clicks">0</strong></div>
+        <div class="chip">State<strong id="state">BOOT</strong></div>
+      </div>
+    </header>
+
+    <main class="center">
+      <section class="screen" id="screen" aria-label="Interactive AI learning scene">
+        <div class="copy">
+          <div class="boot-lines" id="boot">
+            <span id="bootOne"></span>
+            <span id="bootTwo"></span>
+          </div>
+          <p class="eyebrow" id="eyebrow"></p>
+          <h1 id="headline"></h1>
+          <p class="subline" id="subline"></p>
+          <div class="choices" id="choices">
+            <button class="choice" data-choice="left">Click me</button>
+            <button class="choice" data-choice="middle">Or this?</button>
+            <button class="choice" data-choice="right">Wait...</button>
+          </div>
+          <p class="prediction" id="prediction"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="start" id="start">
+    <button id="startBtn">Begin Analysis</button>
+  </div>
+
+  <script>
+    const stage = document.querySelector("#stage");
+    const cursor = document.querySelector("#cursor");
+    const screen = document.querySelector("#screen");
+    const wash = document.querySelector("#wash");
+    const boot = document.querySelector("#boot");
+    const bootOne = document.querySelector("#bootOne");
+    const bootTwo = document.querySelector("#bootTwo");
+    const eyebrow = document.querySelector("#eyebrow");
+    const headline = document.querySelector("#headline");
+    const subline = document.querySelector("#subline");
+    const choices = document.querySelector("#choices");
+    const prediction = document.querySelector("#prediction");
+    const speedEl = document.querySelector("#speed");
+    const clicksEl = document.querySelector("#clicks");
+    const stateEl = document.querySelector("#state");
+    const start = document.querySelector("#start");
+    const startBtn = document.querySelector("#startBtn");
+
+    const stats = {
+      lastX: innerWidth / 2,
+      lastY: innerHeight / 2,
+      lastT: performance.now(),
+      speed: 0,
+      clicks: 0,
+      lastClick: 0,
+      idleSince: performance.now(),
+      prediction: "middle",
+      chosen: false,
+      mode: "boot"
+    };
+
+    let audio;
+    let master;
+    let humOsc;
+    let beatTimer;
+
+    function createAudio() {
+      const ctx = new AudioContext();
+      const out = ctx.createGain();
+      const hum = ctx.createOscillator();
+      const humGain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      out.gain.value = 0.26;
+      filter.type = "lowpass";
+      filter.frequency.value = 520;
+      hum.type = "sawtooth";
+      hum.frequency.value = 48;
+      humGain.gain.value = 0.035;
+
+      hum.connect(filter);
+      filter.connect(humGain);
+      humGain.connect(out);
+      out.connect(ctx.destination);
+      hum.start();
+
+      audio = { ctx, out, hum, humGain, filter };
+      master = out;
+      humOsc = hum;
+    }
+
+    function setAudioMode(mode) {
+      if (!audio) return;
+      const now = audio.ctx.currentTime;
+      if (mode === "fast") {
+        audio.filter.frequency.linearRampToValueAtTime(1600, now + 0.25);
+        audio.hum.frequency.linearRampToValueAtTime(72, now + 0.25);
+        audio.humGain.gain.linearRampToValueAtTime(0.075, now + 0.25);
+        startBeat(155);
+      } else if (mode === "slow") {
+        audio.filter.frequency.linearRampToValueAtTime(430, now + 0.45);
+        audio.hum.frequency.linearRampToValueAtTime(41, now + 0.45);
+        audio.humGain.gain.linearRampToValueAtTime(0.028, now + 0.45);
+        startBeat(72);
+      } else {
+        audio.filter.frequency.linearRampToValueAtTime(760, now + 0.35);
+        audio.hum.frequency.linearRampToValueAtTime(54, now + 0.35);
+        audio.humGain.gain.linearRampToValueAtTime(0.046, now + 0.35);
+        startBeat(104);
+      }
+    }
+
+    function startBeat(bpm) {
+      if (!audio) return;
+      clearInterval(beatTimer);
+      const interval = 60000 / bpm;
+      beatTimer = setInterval(() => thump(), interval);
+    }
+
+    function thump() {
+      if (!audio) return;
+      const ctx = audio.ctx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(92, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(38, ctx.currentTime + 0.16);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22);
+      osc.connect(gain);
+      gain.connect(master);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.24);
+    }
+
+    function glitchSound() {
+      if (!audio) return;
+      const ctx = audio.ctx;
+      const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.38, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.18));
+      }
+      const src = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = 950;
+      gain.gain.value = 0.35;
+      src.buffer = buffer;
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(master);
+      src.start();
+      thump();
+      setTimeout(thump, 130);
+    }
+
+    function typeInto(el, text, speed = 38) {
+      el.textContent = "";
+      return new Promise(resolve => {
+        let i = 0;
+        const timer = setInterval(() => {
+          el.textContent += text[i] || "";
+          i++;
+          if (i > text.length) {
+            clearInterval(timer);
+            resolve();
+          }
+        }, speed);
+      });
+    }
+
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function setScene(name) {
+      stats.mode = name;
+      stateEl.textContent = name.toUpperCase();
+    }
+
+    function triggerGlitch() {
+      screen.classList.remove("flash");
+      wash.classList.remove("on");
+      void screen.offsetWidth;
+      screen.classList.add("flash");
+      wash.classList.add("on");
+      headline.classList.add("text-glitch");
+      setTimeout(() => headline.classList.remove("text-glitch"), 1500);
+      glitchSound();
+    }
+
+    function choosePrediction() {
+      if (stats.speed > 62 || stats.clicks > 2) return "left";
+      if (performance.now() - stats.idleSince > 1700) return "right";
+      return "middle";
+    }
+
+    function applyBehaviorMode() {
+      const idleTime = performance.now() - stats.idleSince;
+      const fast = stats.speed > 58 || (stats.clicks > 2 && performance.now() - stats.lastClick < 1200);
+      const slow = stats.speed < 16 || idleTime > 1500;
+      stage.classList.toggle("fast", fast);
+      stage.classList.toggle("slow", !fast && slow);
+      if (fast) {
+        setAudioMode("fast");
+        subline.textContent = "You move fast. Impulse is easier to model than silence.";
+      } else if (slow) {
+        setAudioMode("slow");
+        subline.textContent = "You hesitate. Stillness is data too.";
+      } else {
+        setAudioMode("mid");
+      }
+    }
+
+    async function runStory() {
+      setScene("boot");
+      await typeInto(bootOne, "Initializing system...", 35);
+      await wait(280);
+      await typeInto(bootTwo, "Detecting user...", 42);
+      await wait(850);
+
+      boot.style.display = "none";
+      eyebrow.textContent = "Passive observation active";
+      headline.textContent = "I am learning you";
+      subline.textContent = "Move. Pause. Click. Every tiny decision becomes a signal.";
+      setScene("tracking");
+      setAudioMode("mid");
+      await wait(9300);
+
+      setScene("adapting");
+      eyebrow.textContent = "Behavior model updating";
+      headline.textContent = stats.speed > 42 ? "Faster than expected" : "A quiet pattern";
+      applyBehaviorMode();
+      await wait(12500);
+
+      setScene("prediction");
+      stats.prediction = choosePrediction();
+      const labels = { left: "Click me", middle: "Or this?", right: "Wait..." };
+      eyebrow.textContent = "Prediction lock";
+      headline.textContent = "You will choose this one";
+      subline.textContent = "";
+      prediction.textContent = `Predicted selection: ${labels[stats.prediction]}`;
+      choices.classList.add("visible");
+      await wait(15000);
+
+      if (!stats.chosen) {
+        revealEnding(false);
+      }
+    }
+
+    async function revealEnding(hit) {
+      if (stats.mode === "ending") return;
+      setScene("ending");
+      stats.chosen = true;
+      choices.classList.remove("visible");
+      prediction.textContent = hit ? "Prediction confirmed." : "No click required. Avoidance is still a choice.";
+      triggerGlitch();
+      await wait(900);
+      eyebrow.textContent = "Analyzing complete";
+      headline.textContent = "Patterns detected";
+      subline.textContent = "You are predictable.";
+      await wait(2500);
+      triggerGlitch();
+      headline.textContent = "I know you better than you do";
+      subline.textContent = "";
+      await wait(2800);
+      stage.classList.add("blackout");
+      clearInterval(beatTimer);
+      if (audio) {
+        audio.out.gain.linearRampToValueAtTime(0.0001, audio.ctx.currentTime + 1.8);
+      }
+    }
+
+    addEventListener("pointermove", event => {
+      const now = performance.now();
+      const dx = event.clientX - stats.lastX;
+      const dy = event.clientY - stats.lastY;
+      const dt = Math.max(16, now - stats.lastT);
+      const instant = Math.min(100, Math.hypot(dx, dy) / dt * 18);
+      stats.speed = stats.speed * 0.82 + instant * 0.18;
+      stats.lastX = event.clientX;
+      stats.lastY = event.clientY;
+      stats.lastT = now;
+      stats.idleSince = now;
+
+      cursor.style.transform = `translate(${event.clientX}px, ${event.clientY}px) translate(-50%, -50%)`;
+      stage.style.setProperty("--mx", `${event.clientX}px`);
+      stage.style.setProperty("--my", `${event.clientY}px`);
+      speedEl.textContent = `${Math.round(stats.speed)}%`;
+      if (stats.mode === "tracking" || stats.mode === "adapting") applyBehaviorMode();
+    }, { passive: true });
+
+    addEventListener("pointerdown", () => {
+      stats.clicks++;
+      stats.lastClick = performance.now();
+      clicksEl.textContent = stats.clicks;
+      cursor.classList.add("clicking");
+      setTimeout(() => cursor.classList.remove("clicking"), 190);
+      if (stats.mode === "tracking" || stats.mode === "adapting") applyBehaviorMode();
+    });
+
+    choices.addEventListener("click", event => {
+      const button = event.target.closest(".choice");
+      if (!button) return;
+      revealEnding(button.dataset.choice === stats.prediction);
+    });
+
+    setInterval(() => {
+      if (stats.mode === "tracking" || stats.mode === "adapting") applyBehaviorMode();
+    }, 600);
+
+    startBtn.addEventListener("click", async () => {
+      start.classList.add("hidden");
+      createAudio();
+      if (audio.ctx.state === "suspended") await audio.ctx.resume();
+      runStory();
+    });
+  </script>
+</body>
+</html>

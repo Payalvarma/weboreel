@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Day in 2050 - Web Reel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="reel-shell" aria-label="Interactive web reel about a day in 2050">
+    <section class="reel-stage" id="reelStage">
+      <div class="sky-grid"></div>
+      <div class="light-sweep"></div>
+      <header class="top-bar">
+        <span class="live-pill">2050 LIVE</span>
+        <button class="sound-toggle" id="soundToggle" type="button" aria-label="Toggle sound">Sound On</button>
+      </header>
+      <div class="progress" aria-hidden="true"><span id="progressFill"></span></div>
+
+      <article class="slide is-active" data-theme="sunrise">
+        <p class="eyebrow">Morning upload</p>
+        <h1>A Day in 2050</h1>
+        <p class="big-line">Your room wakes up before you do.</p>
+        <div class="visual city">
+          <span class="sun"></span><span class="tower tower-a"></span><span class="tower tower-b"></span>
+          <span class="tower tower-c"></span><span class="drone drone-a"></span><span class="drone drone-b"></span>
+        </div>
+        <button class="primary-action" type="button" data-next>Start the day</button>
+      </article>
+
+      <article class="slide" data-theme="aqua">
+        <p class="eyebrow">07:00</p>
+        <h2>AI Alarm</h2>
+        <p class="big-line">Your sleep bot checks your dreams, mood, and health score.</p>
+        <div class="question">
+          <p>Would you let an AI choose your wake-up time?</p>
+          <div class="choices">
+            <button type="button" data-choice>Yes, optimize me</button>
+            <button type="button" data-choice>No, I need control</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-theme="pink">
+        <p class="eyebrow">08:00</p>
+        <h2>Smart Breakfast</h2>
+        <p class="big-line">Your kitchen prints food based on your body scan.</p>
+        <div class="food-printer"><span></span><span></span><span></span></div>
+        <div class="question">
+          <p>What should the printer make?</p>
+          <div class="choices">
+            <button type="button" data-choice>Protein pancakes</button>
+            <button type="button" data-choice>Glow smoothie</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-theme="lime">
+        <p class="eyebrow">09:00</p>
+        <h2>Travel Mode</h2>
+        <p class="big-line">Your self-flying pod maps the cleanest sky lane.</p>
+        <div class="visual traffic">
+          <span class="lane lane-one"></span><span class="lane lane-two"></span>
+          <span class="pod pod-one"></span><span class="pod pod-two"></span>
+        </div>
+        <div class="question">
+          <p>Would you ride in a driverless flying pod?</p>
+          <div class="choices">
+            <button type="button" data-choice>Absolutely</button>
+            <button type="button" data-choice>Maybe in 2060</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-theme="violet">
+        <p class="eyebrow">11:00</p>
+        <h2>School + Work</h2>
+        <p class="big-line">Hologram teachers, AI teammates, instant translation.</p>
+        <div class="holo-card">
+          <span>LIVE HOLO</span><strong>Quantum History</strong><small>Translated into 42 languages</small>
+        </div>
+        <div class="question">
+          <p>Should AI be your classmate or your teacher?</p>
+          <div class="choices">
+            <button type="button" data-choice>Classmate</button>
+            <button type="button" data-choice>Teacher</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-theme="orange">
+        <p class="eyebrow">18:00</p>
+        <h2>Evening Reset</h2>
+        <p class="big-line">A wellness wall changes light, scent, and music for your brain.</p>
+        <div class="mood-orbit" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+        <div class="question">
+          <p>What mood would you install tonight?</p>
+          <div class="choices">
+            <button type="button" data-choice>Calm focus</button>
+            <button type="button" data-choice>Party energy</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-theme="night">
+        <p class="eyebrow">23:00</p>
+        <h2>Dream Backup</h2>
+        <p class="big-line">Your memories sync safely while the moon-city glows.</p>
+        <div class="final-score"><span id="answerCount">0</span><small>future choices made</small></div>
+        <button class="primary-action" type="button" id="restart">Replay reel</button>
+      </article>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
